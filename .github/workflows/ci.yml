@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint shell scripts
+        run: shellcheck --severity=error install.sh tests/*.sh skills/*/tests/*.sh skills/*/scripts/*.sh
+
+      - name: Skill and agent frontmatter
+        run: bash tests/check_frontmatter.sh
+
+      - name: research structure test
+        run: SK=skills/research AG=agents bash skills/research/tests/check_structure.sh
+
+      - name: game-pm structure test
+        run: SK=skills/game-pm AG=agents GD=/nonexistent bash skills/game-pm/tests/check_structure.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: website-hardening scanner self-test
+        run: |
+          node skills/website-hardening/tests/make-fixture.mjs
+          node skills/website-hardening/scripts/scan.mjs --self-test
